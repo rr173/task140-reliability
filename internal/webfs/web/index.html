@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>可靠性分析与安全评估引擎</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header>
+  <h1>可靠性分析与安全评估引擎</h1>
+  <p class="subtitle">FTA 故障树 · FMEA 风险优先数 · RBD 可靠性框图 · 失效数据拟合</p>
+</header>
+<nav id="tabs">
+  <button class="tab active" data-tab="analyses">分析项目</button>
+  <button class="tab" data-tab="fta">故障树</button>
+  <button class="tab" data-tab="fmea">FMEA</button>
+  <button class="tab" data-tab="rbd">可靠性框图</button>
+  <button class="tab" data-tab="fdist">失效数据</button>
+  <button class="tab" data-tab="result">求解结果</button>
+</nav>
+<main>
+  <section id="tab-analyses" class="panel active">
+    <h2>分析项目</h2>
+    <div class="row">
+      <input id="a-name" placeholder="项目名称">
+      <input id="a-top" placeholder="顶事件描述">
+      <button id="a-create">创建</button>
+      <button id="a-refresh">刷新</button>
+    </div>
+    <table id="a-table"><thead><tr><th>ID</th><th>名称</th><th>状态</th><th>版本</th><th>顶事件</th></tr></thead><tbody></tbody></table>
+    <p class="hint">点击行进入该分析。状态机：draft → analyzed → reviewed → baselined；revise 生成新版本。</p>
+  </section>
+
+  <section id="tab-fta" class="panel">
+    <h2>故障树（FTA）</h2>
+    <p class="hint">先在"分析项目"选择一个分析，再在此装配门与基本事件。门类型 AND/OR/KOFN。</p>
+    <div class="row">
+      <input id="f-aid" placeholder="分析 ID" readonly>
+      <button id="f-load">载入树</button>
+    </div>
+    <h3>添加门</h3>
+    <div class="row">
+      <input id="g-id" placeholder="门ID(如 TOP)">
+      <select id="g-type"><option>AND</option><option>OR</option><option>KOFN</option></select>
+      <input id="g-k" placeholder="k(KOFN)" type="number">
+      <label><input type="checkbox" id="g-top"> 顶门</label>
+    </div>
+    <h3>添加基本事件</h3>
+    <div class="row">
+      <input id="e-id" placeholder="事件ID">
+      <input id="e-label" placeholder="标签">
+      <input id="e-prob" placeholder="q(1e-6)" type="number">
+      <input id="e-ccf" placeholder="CCF组(可选)">
+      <label><input type="checkbox" id="e-neg"> 取反(NOT)</label>
+    </div>
+    <p class="hint">门输入在下方按顺序添加（指向子门或事件）。</p>
+    <h3>门输入</h3>
+    <div class="row">
+      <input id="in-gate" placeholder="门ID">
+      <input id="in-ref" placeholder="子门ID 或 事件ID">
+      <button id="in-add">添加输入</button>
+    </div>
+    <div class="row">
+      <button id="f-save">保存故障树</button>
+      <button id="f-solve">求解</button>
+    </div>
+    <pre id="fta-out" class="out"></pre>
+  </section>
+
+  <section id="tab-fmea" class="panel">
+    <h2>FMEA 风险优先数</h2>
+    <div class="row">
+      <input id="m-aid" placeholder="分析 ID" readonly>
+      <button id="m-load">载入</button>
+    </div>
+    <h3>添加行</h3>
+    <div class="row">
+      <input id="m-fn" placeholder="功能">
+      <input id="m-mode" placeholder="失效模式">
+      <input id="m-eff" placeholder="影响">
+      <input id="m-s" placeholder="S(1-10)" type="number">
+      <input id="m-o" placeholder="O(1-10)" type="number">
+      <input id="m-d" placeholder="D(1-10)" type="number">
+      <button id="m-add">添加</button>
+    </div>
+    <table id="m-table"><thead><tr><th>功能</th><th>失效模式</th><th>影响</th><th>S</th><th>O</th><th>D</th><th>RPN</th><th>等级</th></tr></thead><tbody></tbody></table>
+    <p class="hint">严重度地板：S≥s_crit 直接判 high（无视 RPN）。</p>
+  </section>
+
+  <section id="tab-rbd" class="panel">
+    <h2>可靠性框图（RBD）</h2>
+    <div class="row">
+      <input id="r-aid" placeholder="分析 ID" readonly>
+      <button id="r-load">载入</button>
+    </div>
+    <h3>添加块</h3>
+    <div class="row">
+      <input id="b-id" placeholder="块ID">
+      <select id="b-type"><option value="block">block</option><option value="series">series</option><option value="parallel">parallel</option><option value="kofn">kofn</option></select>
+      <input id="b-k" placeholder="k(KOFN)" type="number">
+      <input id="b-rate" placeholder="失效率ppt" type="number">
+      <input id="b-repair" placeholder="修复率ppt(可选)" type="number">
+      <button id="b-add">添加块</button>
+    </div>
+    <h3>块子项</h3>
+    <div class="row">
+      <input id="c-block" placeholder="块ID(父)">
+      <input id="c-child" placeholder="子块ID">
+      <button id="c-add">添加子项</button>
+    </div>
+    <div class="row">
+      <input id="r-root" placeholder="根块ID">
+      <button id="r-save">保存框图</button>
+      <button id="r-solve">求解</button>
+    </div>
+    <pre id="rbd-out" class="out"></pre>
+  </section>
+
+  <section id="tab-fdist" class="panel">
+    <h2>失效数据拟合</h2>
+    <div class="row">
+      <input id="d-aid" placeholder="分析 ID" readonly>
+      <button id="d-load">载入</button>
+    </div>
+    <h3>添加失效事件</h3>
+    <div class="row">
+      <input id="d-ttf" placeholder="TTF(小时)" type="number">
+      <input id="d-ttr" placeholder="TTR(小时)" type="number">
+      <button id="d-add">添加</button>
+    </div>
+    <table id="d-table"><thead><tr><th>TTF</th><th>TTR</th></tr></thead><tbody></tbody></table>
+    <button id="d-fit">拟合分布</button>
+    <pre id="fdist-out" class="out"></pre>
+  </section>
+
+  <section id="tab-result" class="panel">
+    <h2>求解结果</h2>
+    <div class="row">
+      <input id="s-aid" placeholder="分析 ID" readonly>
+      <button id="s-solve">求解</button>
+      <button id="s-get">查看结果</button>
+    </div>
+    <div class="row">
+      <button id="s-review">评审</button>
+      <button id="s-baseline">基线锁定</button>
+      <button id="s-revise">修订(v+1)</button>
+    </div>
+    <pre id="result-out" class="out"></pre>
+  </section>
+</main>
+<footer><small>task140-reliability · SQLite + 原生前端 · Go 1.26.3</small></footer>
+<script src="/app.js"></script>
+</body>
+</html>
