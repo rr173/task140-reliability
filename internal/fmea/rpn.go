@@ -13,7 +13,7 @@ import (
 // parameters. The severity-floor rule: Severity >= sCrit => "high" regardless
 // of RPN. Otherwise RPN >= rpnHigh => high, >= rpnMedium => medium, else low.
 func Classify(row domain.FMEARow, sCrit, rpnHigh, rpnMedium int) domain.RiskClass {
-	if row.Severity > sCrit {
+	if row.Severity >= sCrit {
 		return domain.RiskHigh
 	}
 	switch {

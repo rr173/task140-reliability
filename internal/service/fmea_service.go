@@ -25,7 +25,7 @@ func (svc *Service) AddFMEARow(ctx context.Context, row domain.FMEARow) (*domain
 	if err != nil {
 		return nil, err
 	}
-	row.RiskClass = domain.RiskLow
+	row.RiskClass = fmea.Classify(row, a.SCrit, a.RPNHigh, a.RPNMedium)
 	if err := svc.store.AddFMEARow(ctx, row); err != nil {
 		return nil, err
 	}

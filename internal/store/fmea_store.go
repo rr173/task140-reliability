@@ -156,7 +156,6 @@ func (s *Store) LoadFMEATable(ctx context.Context, analysisID string) (*domain.F
 		}
 		r.RiskClass = domain.RiskClass(rclass)
 		r.CreatedAt = parseTime(created)
-		r.RiskClass = domain.RiskLow
 		table.Rows = append(table.Rows, r)
 	}
 	return table, rows.Err()

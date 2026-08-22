@@ -15,10 +15,15 @@ func TestRPN(t *testing.T) {
 
 func TestSeverityFloor(t *testing.T) {
 	a := domain.Analysis{SCrit: 8, RPNHigh: 200, RPNMedium: 100}
-	// S=9 (>=sCrit) => high even with tiny RPN
+	// S=9 (>sCrit) => high even with tiny RPN
 	row := domain.FMEARow{Severity: 9, Occurrence: 1, Detection: 1, RPN: 9}
 	if got := Classify(row, a.SCrit, a.RPNHigh, a.RPNMedium); got != domain.RiskHigh {
 		t.Fatalf("severity floor: got %s, want high", got)
+	}
+	// S=8 (==sCrit) => high even with tiny RPN (threshold equality must stay high)
+	rowEq := domain.FMEARow{Severity: 8, Occurrence: 1, Detection: 1, RPN: 8}
+	if got := Classify(rowEq, a.SCrit, a.RPNHigh, a.RPNMedium); got != domain.RiskHigh {
+		t.Fatalf("severity floor (==): got %s, want high", got)
 	}
 	// S=5, RPN=200 => high
 	row2 := domain.FMEARow{Severity: 5, Occurrence: 10, Detection: 4, RPN: 200}
