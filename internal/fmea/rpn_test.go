@@ -25,10 +25,20 @@ func TestSeverityFloor(t *testing.T) {
 	if got := Classify(row2, a.SCrit, a.RPNHigh, a.RPNMedium); got != domain.RiskHigh {
 		t.Fatalf("rpn high: got %s, want high", got)
 	}
-	// S=5, RPN=100 => medium
+	// S=5, RPN=100 => medium (exactly at the medium threshold; must NOT drop to low)
 	row3 := domain.FMEARow{Severity: 5, RPN: 100}
 	if got := Classify(row3, a.SCrit, a.RPNHigh, a.RPNMedium); got != domain.RiskMedium {
 		t.Fatalf("rpn medium: got %s, want medium", got)
+	}
+	// S=5, RPN=101 => medium (just above the medium threshold)
+	row3b := domain.FMEARow{Severity: 5, RPN: 101}
+	if got := Classify(row3b, a.SCrit, a.RPNHigh, a.RPNMedium); got != domain.RiskMedium {
+		t.Fatalf("rpn medium+1: got %s, want medium", got)
+	}
+	// S=5, RPN=99 => low (just below the medium threshold)
+	row3c := domain.FMEARow{Severity: 5, RPN: 99}
+	if got := Classify(row3c, a.SCrit, a.RPNHigh, a.RPNMedium); got != domain.RiskLow {
+		t.Fatalf("rpn medium-1: got %s, want low", got)
 	}
 	// S=5, RPN=50 => low
 	row4 := domain.FMEARow{Severity: 5, RPN: 50}
@@ -40,14 +50,15 @@ func TestSeverityFloor(t *testing.T) {
 func TestSummarize(t *testing.T) {
 	a := domain.Analysis{SCrit: 8, RPNHigh: 200, RPNMedium: 100}
 	table := &domain.FMEATable{AnalysisID: "a1", Rows: []domain.FMEARow{
-		{Severity: 9, Occurrence: 1, Detection: 1}, // high (floor)
+		{Severity: 9, Occurrence: 1, Detection: 1},  // RPN 9 high (floor)
 		{Severity: 5, Occurrence: 10, Detection: 5}, // RPN 250 high
 		{Severity: 5, Occurrence: 5, Detection: 5},  // RPN 125 medium
-		{Severity: 5, Occurrence: 2, Detection: 5},   // RPN 50 low
+		{Severity: 5, Occurrence: 2, Detection: 5},  // RPN 50 low
+		{Severity: 5, Occurrence: 5, Detection: 4},  // RPN 100 medium (exactly at threshold)
 	}}
 	out := Summarize(table, a)
-	if out.HighCount != 2 || out.MediumCount != 1 || out.LowCount != 1 {
-		t.Fatalf("counts H/M/L = %d/%d/%d, want 2/1/1", out.HighCount, out.MediumCount, out.LowCount)
+	if out.HighCount != 2 || out.MediumCount != 2 || out.LowCount != 1 {
+		t.Fatalf("counts H/M/L = %d/%d/%d, want 2/2/1", out.HighCount, out.MediumCount, out.LowCount)
 	}
 	if out.MaxRPN != 250 {
 		t.Fatalf("max rpn = %d, want 250", out.MaxRPN)

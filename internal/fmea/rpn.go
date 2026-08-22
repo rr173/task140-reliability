@@ -19,7 +19,7 @@ func Classify(row domain.FMEARow, sCrit, rpnHigh, rpnMedium int) domain.RiskClas
 	switch {
 	case row.RPN >= rpnHigh:
 		return domain.RiskHigh
-	case row.RPN > rpnMedium:
+	case row.RPN >= rpnMedium:
 		return domain.RiskMedium
 	default:
 		return domain.RiskLow

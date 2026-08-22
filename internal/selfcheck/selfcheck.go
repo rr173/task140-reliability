@@ -39,6 +39,7 @@ func Run() error {
 		{"fta-absorption-truncation", smokeAbsorptionTruncation},
 		{"fta-noncoherent", smokeNonCoherent},
 		{"fmea-rpn-severity-floor", smokeFMEARPN},
+		{"fmea-medium-threshold-no-silent-downgrade", smokeFMEAMediumThreshold},
 		{"rbd-series-parallel-kofn", smokeRBD},
 		{"failure-data-fit", smokeFailureDataFit},
 		{"lifecycle-baseline-revise", smokeLifecycle},

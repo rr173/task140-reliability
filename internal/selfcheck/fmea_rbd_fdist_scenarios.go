@@ -63,6 +63,70 @@ func smokeFMEARPN(srv *httptest.Server, dbPath string) error {
 	return nil
 }
 
+// smokeFMEAMediumThreshold: a row whose RPN sits exactly on the medium
+// threshold (>=medium, <high) must stay medium through entry, recovery read
+// and re-solve — it must never be silently downgraded to low.
+func smokeFMEAMediumThreshold(srv *httptest.Server, dbPath string) error {
+	aid, err := createAnalysis(srv, "fmea-med", "fmea-med")
+	if err != nil {
+		return err
+	}
+	// defaults: s_crit=8, rpn_high=200, rpn_medium=100. S=5,O=5,D=4 => RPN=100,
+	// exactly at the medium threshold and below the high threshold.
+	if err := mustDo(srv, "POST", "/analyses/"+aid+"/fmea/rows", map[string]any{
+		"function": "valve", "failure_mode": "stuck", "effect": "block",
+		"severity": 5, "occurrence": 5, "detection": 4,
+	}, nil); err != nil {
+		return err
+	}
+	// 1. entry: the stored row must report risk_class=medium.
+	var tb map[string]any
+	if err := mustDo(srv, "GET", "/analyses/"+aid+"/fmea", nil, &tb); err != nil {
+		return err
+	}
+	rows, _ := tb["rows"].([]any)
+	if len(rows) != 1 {
+		return fmt.Errorf("want 1 fmea row, got %d", len(rows))
+	}
+	if rc := rows[0].(map[string]any)["risk_class"]; rc != "medium" {
+		return fmt.Errorf("entry risk_class = %v, want medium (no silent downgrade on read)", rc)
+	}
+	// 2. re-solve: the recomputed result must keep medium_count=1, low_count=0.
+	var res map[string]any
+	if err := mustDo(srv, "POST", "/analyses/"+aid+"/solve", nil, &res); err != nil {
+		return err
+	}
+	fmea, ok := res["fmea"].(map[string]any)
+	if !ok {
+		return fmt.Errorf("no fmea in result: %v", res)
+	}
+	if !numEq(fmea["medium_count"], 1) {
+		return fmt.Errorf("re-solve medium_count = %v, want 1", fmea["medium_count"])
+	}
+	if !numEq(fmea["low_count"], 0) {
+		return fmt.Errorf("re-solve low_count = %v, want 0 (silently downgraded)", fmea["low_count"])
+	}
+	// 3. recovery read after restart: the persisted table must still show medium.
+	srv.Close()
+	srv2, err := newServer(dbPath)
+	if err != nil {
+		return fmt.Errorf("reopen server: %w", err)
+	}
+	defer srv2.Close()
+	var tb2 map[string]any
+	if err := mustDo(srv2, "GET", "/analyses/"+aid+"/fmea", nil, &tb2); err != nil {
+		return err
+	}
+	rows2, _ := tb2["rows"].([]any)
+	if len(rows2) != 1 {
+		return fmt.Errorf("after restart want 1 fmea row, got %d", len(rows2))
+	}
+	if rc := rows2[0].(map[string]any)["risk_class"]; rc != "medium" {
+		return fmt.Errorf("after restart risk_class = %v, want medium (persisted class lost on recovery read)", rc)
+	}
+	return nil
+}
+
 // smokeRBD: series(A,B) reliability uses the analysis default 8760-hour
 // mission, and k>n is rejected.
 func smokeRBD(srv *httptest.Server, dbPath string) error {
