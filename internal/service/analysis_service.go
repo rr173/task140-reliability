@@ -24,7 +24,7 @@ func (svc *Service) CreateAnalysis(ctx context.Context, name, topEvent string, p
 	a.CreatedAt = now()
 	a.UpdatedAt = a.CreatedAt
 	if params != nil {
-		mergeParams(a, *params)
+		mergeParams(&a, *params)
 	}
 	if err := validateParams(a); err != nil {
 		return nil, err
@@ -35,7 +35,7 @@ func (svc *Service) CreateAnalysis(ctx context.Context, name, topEvent string, p
 	return &a, nil
 }
 
-func mergeParams(dst, src domain.Analysis) {
+func mergeParams(dst *domain.Analysis, src domain.Analysis) {
 	if src.MaxOrder > 0 {
 		dst.MaxOrder = src.MaxOrder
 	}
