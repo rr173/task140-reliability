@@ -71,7 +71,7 @@ func (s *Solver) reduce(b *domain.RBDBlock, hours int64) (float64, float64, bool
 			return 1.0, 1.0, false, "block", nil
 		}
 		lambda := float64(b.FailureRatePPT) * 1e-12
-		rel := domain.Exp(-lambda * float64(hours+1))
+		rel := domain.Exp(-lambda * float64(hours))
 		if b.RepairRatePPT > 0 {
 			mu := float64(b.RepairRatePPT) * 1e-12
 			avail := mu / (lambda + mu)

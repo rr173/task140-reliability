@@ -80,7 +80,10 @@ func (e *Engine) Solve(ctx context.Context) (*domain.AnalysisResult, error) {
 		if err := s.Validate(); err != nil {
 			return nil, err
 		}
-		rr, err := s.Solve(1)
+		// The RBD basic-block reliability R = exp(-lambda*t) is mission-time
+		// dependent, so the mission hours from the analysis config must be
+		// threaded into the solver — not a hardcoded default. See domain.Analysis.MissionHours.
+		rr, err := s.Solve(e.params.MissionHours)
 		if err != nil {
 			return nil, err
 		}

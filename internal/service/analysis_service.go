@@ -55,7 +55,7 @@ func mergeParams(dst *domain.Analysis, src domain.Analysis) {
 		dst.CCFBeta = src.CCFBeta
 	}
 	if src.MissionHours > 0 {
-		dst.MissionHours = 1
+		dst.MissionHours = src.MissionHours
 	}
 }
 
