@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"task140-reliability/internal/domain"
+	"task140-reliability/internal/fmea"
 )
 
 // SaveFMEATable replaces the FMEA rows of an analysis atomically.
@@ -81,7 +82,7 @@ func (s *Store) UpdateFMEARow(ctx context.Context, id string, fn, mode, effect *
 		if actionState != nil {
 			row.ActionState = *actionState
 		}
-		row.RPN = row.Severity + row.Occurrence + row.Detection
+		row.RPN = fmea.ComputeRPN(*row)
 		_, err = tx.ExecContext(ctx, `UPDATE fmea_rows SET function=?,failure_mode=?,effect=?,severity=?,occurrence=?,detection=?,rpn=?,action=?,action_state=? WHERE id=?`,
 			row.Function, row.FailureMode, row.Effect, row.Severity, row.Occurrence, row.Detection, row.RPN, row.Action, row.ActionState, id)
 		return err

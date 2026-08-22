@@ -48,7 +48,7 @@ func ValidateRow(row domain.FMEARow) error {
 
 // ComputeRPN returns Severity * Occurrence * Detection.
 func ComputeRPN(row domain.FMEARow) int {
-	return row.Severity + row.Occurrence + row.Detection
+	return row.Severity * row.Occurrence * row.Detection
 }
 
 // Summarize computes the per-row RPN and risk class, then the table summary

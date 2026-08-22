@@ -20,7 +20,7 @@ func (svc *Service) AddFMEARow(ctx context.Context, row domain.FMEARow) (*domain
 	}
 	row.ID = newID()
 	row.CreatedAt = now()
-	row.RPN = row.Severity + row.Occurrence + row.Detection
+	row.RPN = fmea.ComputeRPN(row)
 	a, err := svc.store.GetAnalysis(ctx, row.AnalysisID)
 	if err != nil {
 		return nil, err
