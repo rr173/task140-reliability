@@ -12,12 +12,14 @@ import (
 // Classify computes the risk class of an FMEA row under the given analysis
 // parameters. The severity-floor rule: Severity >= sCrit => "high" regardless
 // of RPN. Otherwise RPN >= rpnHigh => high, >= rpnMedium => medium, else low.
+// Thresholds are inclusive: an RPN that lands exactly on rpnHigh is "high",
+// not "medium" (and exactly on rpnMedium is "medium", not "low").
 func Classify(row domain.FMEARow, sCrit, rpnHigh, rpnMedium int) domain.RiskClass {
 	if row.Severity >= sCrit {
 		return domain.RiskHigh
 	}
 	switch {
-	case row.RPN > rpnHigh:
+	case row.RPN >= rpnHigh:
 		return domain.RiskHigh
 	case row.RPN >= rpnMedium:
 		return domain.RiskMedium

@@ -169,6 +169,76 @@ func TestRBDDiagramRoundTrip(t *testing.T) {
 	}
 }
 
+func TestFMEARowRiskClassRoundTrip(t *testing.T) {
+	s := newTestStore(t)
+	defer s.Close()
+	ctx := context.Background()
+	a := domain.DefaultAnalysisParams()
+	a.ID = "a1"
+	a.State = domain.StateDraft
+	a.Version = 1
+	a.CreatedAt = time.Now().UTC()
+	a.UpdatedAt = a.CreatedAt
+	if err := s.CreateAnalysis(ctx, a); err != nil {
+		t.Fatal(err)
+	}
+
+	// Rows deliberately land exactly on the default thresholds (RPNHigh=200,
+	// RPNMedium=100, SCrit=8). The persisted risk_class must survive a round
+	// trip through the database unmodified — LoadFMEATable must not overwrite it.
+	rows := []struct {
+		id   string
+		cls  domain.RiskClass
+		rpn  int
+		sev  int
+		occ  int
+		det  int
+	}{
+		{"r-hi", domain.RiskHigh, 200, 5, 10, 4},  // RPN == rpnHigh  => high
+		{"r-md", domain.RiskMedium, 100, 5, 5, 4}, // RPN == rpnMed   => medium
+		{"r-lo", domain.RiskLow, 50, 5, 5, 2},     // below thresholds => low
+		{"r-sf", domain.RiskHigh, 9, 9, 1, 1},      // severity floor  => high
+	}
+	for _, r := range rows {
+		row := domain.FMEARow{
+			ID: r.id, AnalysisID: "a1", Function: "f", FailureMode: "m",
+			Severity: r.sev, Occurrence: r.occ, Detection: r.det,
+			RPN: r.rpn, RiskClass: r.cls, CreatedAt: time.Now().UTC(),
+		}
+		if err := s.AddFMEARow(ctx, row); err != nil {
+			t.Fatalf("AddFMEARow %s: %v", r.id, err)
+		}
+	}
+
+	// Single-row read path.
+	got, err := s.GetFMEARow(ctx, "r-hi")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.RiskClass != domain.RiskHigh {
+		t.Fatalf("GetFMEARow risk_class = %s, want high (boundary RPN==rpnHigh)", got.RiskClass)
+	}
+
+	// Table read path: every row's persisted class must come back intact.
+	tb, err := s.LoadFMEATable(ctx, "a1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	byID := map[string]domain.RiskClass{}
+	for _, r := range tb.Rows {
+		byID[r.ID] = r.RiskClass
+	}
+	want := map[string]domain.RiskClass{
+		"r-hi": domain.RiskHigh, "r-md": domain.RiskMedium,
+		"r-lo": domain.RiskLow, "r-sf": domain.RiskHigh,
+	}
+	for id, w := range want {
+		if g := byID[id]; g != w {
+			t.Errorf("LoadFMEATable %s risk_class = %s, want %s", id, g, w)
+		}
+	}
+}
+
 func newTestStore(t *testing.T) *Store {
 	t.Helper()
 	path := t.TempDir() + "/rel.db"
