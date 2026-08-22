@@ -164,7 +164,11 @@ func (s *Solver) Solve(exactLimit int) (*domain.CutSetResult, error) {
 
 	var topProb float64
 	var method string
-	if len(kept) < exactLimit {
+	// exactLimit is an inclusive upper bound: when the number of cut sets is at
+	// or below it, exact inclusion-exclusion is affordable and must be used.
+	// Falling through to the rare-event approximation at the boundary would
+	// silently downgrade an exact computation into an approximation.
+	if len(kept) <= exactLimit {
 		topProb = exactTopProbability(kept, s)
 		method = "exact"
 	} else {

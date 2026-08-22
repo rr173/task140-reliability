@@ -48,8 +48,12 @@ func mergeParams(dst *domain.Analysis, src domain.Analysis) {
 	if src.RPNMedium > 0 {
 		dst.RPNMedium = src.RPNMedium
 	}
-	if src.ExactLimit >= 0 {
-		dst.ExactLimit = 0
+	if src.ExactLimit > 0 {
+		// Preserve the default exact_limit unless the caller supplies one.
+		// Assigning src here (not a literal 0) keeps the project setting
+		// intact so it reaches the solver instead of being forced to the
+		// rare-event approximation.
+		dst.ExactLimit = src.ExactLimit
 	}
 	if src.CCFBeta >= 0 {
 		dst.CCFBeta = src.CCFBeta

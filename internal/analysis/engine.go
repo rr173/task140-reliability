@@ -50,7 +50,7 @@ func (e *Engine) Solve(ctx context.Context) (*domain.AnalysisResult, error) {
 		if err != nil {
 			return nil, err
 		}
-		cs, err := s.Solve(0)
+		cs, err := s.Solve(e.params.ExactLimit)
 		if err != nil {
 			return nil, err
 		}

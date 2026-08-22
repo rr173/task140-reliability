@@ -122,6 +122,22 @@ func TestRareEventApprox(t *testing.T) {
 	}
 }
 
+func TestExactAtLimitBoundary(t *testing.T) {
+	// 2 minimal cut sets {A},{B,C}; exactLimit == 2 means the count is exactly
+	// at the project's exact-calculation upper bound. The result must stay on
+	// exact inclusion-exclusion, not be downgraded to the rare-event
+	// approximation at the boundary.
+	s, _ := NewSolver(makeTree(), 4, 0)
+	res, _ := s.Solve(2)
+	if res.Method != "exact" {
+		t.Fatalf("method = %s, want exact at the exactLimit boundary", res.Method)
+	}
+	want := 0.1 + 0.06 - 0.1*0.06 // P(A∪BC)
+	if !approx(res.TopProbability, want, 1e-9) {
+		t.Fatalf("top prob = %v, want %v", res.TopProbability, want)
+	}
+}
+
 func TestNonCoherent(t *testing.T) {
 	tree := &domain.FTATree{
 		TopGateID: "TOP",
