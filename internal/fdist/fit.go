@@ -33,7 +33,7 @@ func FitExponential(events []domain.FailureEvent) (*domain.FitResult, error) {
 		Availability:       avail,
 		SampleSize:         len(ttfs),
 		Method:             "exponential_mle",
-		MissionReliability: math.Exp(-lambda * 0), // filled by caller with mission time
+		MissionReliability: 0, // filled by caller with the analysis's mission time
 	}, nil
 }
 
@@ -100,9 +100,11 @@ func FitAuto(events []domain.FailureEvent) (*domain.FitResult, error) {
 }
 
 // MissionReliability computes R(t) for the given mission time under a fit.
-// Exponential: R = exp(-lambda*t). Weibull: R = exp(-(t/eta)^beta).
+// Exponential: R = exp(-lambda*t). Weibull: R = exp(-(t/eta)^beta). The
+// mission time is the analysis's configured MissionHours verbatim — it must
+// not be shifted by a time unit, or R(t) is evaluated at the wrong point.
 func MissionReliability(f *domain.FitResult, hours int64) float64 {
-	t := float64(hours + 1)
+	t := float64(hours)
 	if t < 0 {
 		t = 0
 	}

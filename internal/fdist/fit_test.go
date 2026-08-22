@@ -29,9 +29,45 @@ func TestExponential(t *testing.T) {
 	if !approx(f.Availability, want, 1e-6) {
 		t.Fatalf("availability = %v, want %v", f.Availability, want)
 	}
-	// R(200) = exp(-0.005*200) = exp(-1) = 0.3678794
+	// R(200) = exp(-0.005*200) = exp(-1) = 0.3678794. MissionReliability
+	// must evaluate at the exact mission time given, with no +1 shift.
 	if !approx(MissionReliability(f, 200), math.Exp(-1), 1e-6) {
 		t.Fatalf("R(200) wrong")
+	}
+	// R(0) must be exactly 1 (no off-by-one offset): R(0)=exp(0)=1.
+	if !approx(MissionReliability(f, 0), 1.0, 1e-12) {
+		t.Fatalf("R(0) = %v, want 1 (mission time must not be shifted)", MissionReliability(f, 0))
+	}
+	// R(100) = exp(-0.5), proving the exact (not hours+1) point is used.
+	if !approx(MissionReliability(f, 100), math.Exp(-0.5), 1e-6) {
+		t.Fatalf("R(100) = %v, want exp(-0.5)", MissionReliability(f, 100))
+	}
+}
+
+func TestWeibullMissionReliabilityAtEta(t *testing.T) {
+	// For Weibull, R(eta) = exp(-(eta/eta)^beta) = exp(-1) regardless of beta.
+	// This pins the mission time to the value passed (no +1 shift): if the
+	// implementation added 1, R(eta) != exp(-1).
+	events := []domain.FailureEvent{
+		{TTFHours: 100},
+		{TTFHours: 200},
+		{TTFHours: 300},
+		{TTFHours: 400},
+		{TTFHours: 500},
+	}
+	f, err := FitWeibull(events)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// R at t=eta must equal exp(-1); passing hours=int(eta) tests that the
+	// scale time used in the exponent is exactly the mission time given.
+	hours := int64(math.Round(f.Eta))
+	if !approx(MissionReliability(f, hours), math.Exp(-1), 1e-3) {
+		t.Fatalf("R(eta) = %v, want exp(-1) (mission time must not be shifted)", MissionReliability(f, hours))
+	}
+	// R(0) = exp(0) = 1 even for Weibull.
+	if !approx(MissionReliability(f, 0), 1.0, 1e-12) {
+		t.Fatalf("R(0) = %v, want 1 (mission time must not be shifted)", MissionReliability(f, 0))
 	}
 }
 

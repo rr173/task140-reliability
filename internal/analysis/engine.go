@@ -92,7 +92,7 @@ func (e *Engine) Solve(ctx context.Context) (*domain.AnalysisResult, error) {
 		if err != nil {
 			return nil, err
 		}
-		fit.MissionReliability = fdist.MissionReliability(fit, 1)
+		fit.MissionReliability = fdist.MissionReliability(fit, e.params.MissionHours)
 		res.Fit = fit
 		if fit.Warnings != nil {
 			res.Warnings = append(res.Warnings, fit.Warnings...)
