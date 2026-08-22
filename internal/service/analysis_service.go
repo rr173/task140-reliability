@@ -219,7 +219,7 @@ func (svc *Service) Revise(ctx context.Context, id string) (*domain.Analysis, er
 	if _, err := analysis.NextState(a.State, domain.StateDraft); err != nil {
 		return nil, err
 	}
-	newVer := a.Version
+	newVer := a.Version + 1
 	if err := svc.store.SetAnalysisState(ctx, id, domain.StateDraft, newVer, nil); err != nil {
 		return nil, err
 	}

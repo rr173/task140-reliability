@@ -123,7 +123,7 @@ func NextState(cur domain.AnalysisState, want domain.AnalysisState) (domain.Anal
 		return domain.StateBaselined, nil
 	case domain.StateDraft:
 		// revise: from baselined back to draft (new version)
-		if cur != domain.StateReviewed {
+		if cur != domain.StateBaselined {
 			return cur, fmt.Errorf("%w: revise requires baselined (cur=%s)", domain.ErrStateConflict, cur)
 		}
 		return domain.StateDraft, nil

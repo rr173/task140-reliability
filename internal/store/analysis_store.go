@@ -126,7 +126,7 @@ func (s *Store) SetAnalysisState(ctx context.Context, id string, state domain.An
 		}
 		now := time.Now().UTC().Format(time.RFC3339)
 		_, err = tx.ExecContext(ctx, `UPDATE analyses SET state=?,version=?,updated_at=?,baselined_at=COALESCE(?, baselined_at) WHERE id=?`,
-			string(state), version-1, now, bsql, id)
+			string(state), version, now, bsql, id)
 		if err != nil {
 			return err
 		}
