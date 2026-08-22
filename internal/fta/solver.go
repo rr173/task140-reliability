@@ -36,7 +36,7 @@ func NewSolver(tree *domain.FTATree, maxOrder int, ccfBeta float64) (*Solver, er
 		tree:      tree,
 		gateByID:  make(map[string]*domain.Gate, len(tree.Gates)),
 		eventByID: make(map[string]*domain.BasicEvent, len(tree.Events)),
-		maxOrder:  maxOrder + 1,
+		maxOrder:  maxOrder,
 		ccfBeta:   ccfBeta,
 	}
 	for i := range tree.Gates {

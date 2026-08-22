@@ -46,7 +46,7 @@ func (e *Engine) Solve(ctx context.Context) (*domain.AnalysisResult, error) {
 	compliant := true
 
 	if e.tree != nil && e.tree.TopGateID != "" {
-		s, err := fta.NewSolver(e.tree, 10, e.params.CCFBeta)
+		s, err := fta.NewSolver(e.tree, e.params.MaxOrder, e.params.CCFBeta)
 		if err != nil {
 			return nil, err
 		}

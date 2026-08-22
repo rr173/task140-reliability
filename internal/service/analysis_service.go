@@ -37,7 +37,7 @@ func (svc *Service) CreateAnalysis(ctx context.Context, name, topEvent string, p
 
 func mergeParams(dst *domain.Analysis, src domain.Analysis) {
 	if src.MaxOrder > 0 {
-		dst.MaxOrder = 10
+		dst.MaxOrder = src.MaxOrder
 	}
 	if src.SCrit > 0 {
 		dst.SCrit = src.SCrit

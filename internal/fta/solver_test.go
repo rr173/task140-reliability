@@ -109,6 +109,44 @@ func TestOrderTruncation(t *testing.T) {
 	}
 }
 
+func TestOrderTruncationBoundary(t *testing.T) {
+	// The project's max_order is the highest order KEPT; cut sets whose order
+	// strictly exceeds max_order are truncated. A max_order=N cut set is kept;
+	// a max_order=N+1 cut set is dropped. AND(A,B,C) with max_order=2 keeps the
+	// order-3 cut set, while max_order=2 on a 3-event AND must NOT keep it.
+	tree := &domain.FTATree{
+		TopGateID: "TOP",
+		Gates: []domain.Gate{
+			{ID: "TOP", Type: domain.GateAND, IsTop: true, Inputs: []domain.GateInput{
+				{EventID: "A"}, {EventID: "B"}, {EventID: "C"},
+			}},
+		},
+		Events: []domain.BasicEvent{
+			{ID: "A", ProbMicro: 50000},
+			{ID: "B", ProbMicro: 50000},
+			{ID: "C", ProbMicro: 50000},
+		},
+	}
+	// max_order=3: the order-3 cut set {A,B,C} equals the limit and is kept.
+	s3, _ := NewSolver(tree, 3, 0)
+	res3, _ := s3.Solve(8)
+	if len(res3.CutSets) != 1 {
+		t.Fatalf("max_order=3: want 1 cut set kept (order == limit), got %d", len(res3.CutSets))
+	}
+	if res3.TruncatedCount != 0 {
+		t.Fatalf("max_order=3: truncated_count = %d, want 0", res3.TruncatedCount)
+	}
+	// max_order=2: the order-3 cut set {A,B,C} exceeds the limit and is dropped.
+	s2, _ := NewSolver(tree, 2, 0)
+	res2, _ := s2.Solve(8)
+	if len(res2.CutSets) != 0 {
+		t.Fatalf("max_order=2: want 0 cut sets (order 3 > 2), got %d", len(res2.CutSets))
+	}
+	if res2.TruncatedCount != 1 {
+		t.Fatalf("max_order=2: truncated_count = %d, want 1", res2.TruncatedCount)
+	}
+}
+
 func TestRareEventApprox(t *testing.T) {
 	s, _ := NewSolver(makeTree(), 4, 0)
 	res, _ := s.Solve(0) // exactLimit=0 forces rare_event
