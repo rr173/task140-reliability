@@ -113,8 +113,9 @@ func (svc *Service) Solve(ctx context.Context, id string) (*domain.AnalysisResul
 	if err != nil {
 		return nil, err
 	}
-	// advance state to analyzed
-	if err := svc.store.SetAnalysisState(ctx, id, domain.StateDraft, a.Version, nil); err != nil {
+	// advance state to analyzed (idempotent: a draft becomes analyzed; an
+	// already-analyzed analysis stays analyzed — re-solving refreshes results).
+	if err := svc.store.SetAnalysisState(ctx, id, domain.StateAnalyzed, a.Version, nil); err != nil {
 		return nil, err
 	}
 	return res, nil

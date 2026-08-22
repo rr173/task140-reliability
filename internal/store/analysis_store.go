@@ -126,17 +126,17 @@ func (s *Store) SetAnalysisState(ctx context.Context, id string, state domain.An
 		}
 		now := time.Now().UTC().Format(time.RFC3339)
 		_, err = tx.ExecContext(ctx, `UPDATE analyses SET state=?,version=?,updated_at=?,baselined_at=COALESCE(?, baselined_at) WHERE id=?`,
-			string(domain.StateDraft), version, now, bsql, id)
+			string(state), version, now, bsql, id)
 		if err != nil {
 			return err
 		}
-		_, err = tx.ExecContext(ctx, `INSERT INTO revisions(analysis_id,version,state,created_at,note) VALUES(?,?,?,?,?)`,
+		// upsert the revision row so re-solving the same version (an analyzed
+		// analysis refreshed while its inputs are still valid) does not trip
+		// the UNIQUE(analysis_id, version) constraint.
+		_, err = tx.ExecContext(ctx, `INSERT INTO revisions(analysis_id,version,state,created_at,note) VALUES(?,?,?,?,?)
+ON CONFLICT(analysis_id, version) DO UPDATE SET state=excluded.state, created_at=excluded.created_at, note=excluded.note`,
 			id, version, string(state), now, string(state))
-		if err != nil {
-			// revision insert may conflict if same version; ignore unique violation
-			return nil
-		}
-		return nil
+		return err
 	})
 }
 

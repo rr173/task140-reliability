@@ -107,8 +107,11 @@ func (e *Engine) Solve(ctx context.Context) (*domain.AnalysisResult, error) {
 func NextState(cur domain.AnalysisState, want domain.AnalysisState) (domain.AnalysisState, error) {
 	switch want {
 	case domain.StateAnalyzed:
-		if cur != domain.StateDraft {
-			return cur, fmt.Errorf("%w: can only solve from draft (cur=%s)", domain.ErrStateConflict, cur)
+		// Solve is allowed from draft (first solve) and from analyzed (re-solve
+		// to refresh results while the inputs are still editable). Reviewed and
+		// baselined analyses are locked and must be revised first.
+		if cur != domain.StateDraft && cur != domain.StateAnalyzed {
+			return cur, fmt.Errorf("%w: can only solve from draft or analyzed (cur=%s)", domain.ErrStateConflict, cur)
 		}
 		return domain.StateAnalyzed, nil
 	case domain.StateReviewed:
